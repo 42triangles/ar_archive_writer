@@ -994,6 +994,11 @@ pub fn write_import_library<W: Write + Seek>(
                         }
                         name = Cow::Owned(mangled_name);
                     }
+                    Err(_) if !e.noname && export_name.is_none() => {
+                        return Err(Error::other(format!(
+                            "Functions on Arm64EC must use the Arm64EC mangling scheme, but the function \"{name}\" does not. Either use the Arm64EC mangled name or set the `export_name`."
+                        )));
+                    }
                     Ok(None) if !e.noname && export_name.is_none() => {
                         let demangled_name = get_arm64ec_demangled_function_name(&name)
                             .ok_or_else(|| {
@@ -1002,12 +1007,7 @@ pub fn write_import_library<W: Write + Seek>(
                         name_type = ImportNameType::NameExportas;
                         export_name = Some(Cow::Owned(demangled_name));
                     }
-                    Ok(None) => {}
-                    Err(_) => {
-                        return Err(Error::other(format!(
-                            "Functions on Arm64EC must use the Arm64EC mangling scheme, but the function \"{name}\" does not."
-                        )));
-                    }
+                    _ => {}
                 }
             }
 
